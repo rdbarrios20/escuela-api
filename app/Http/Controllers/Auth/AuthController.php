@@ -10,6 +10,7 @@ use App\Models\UserRol;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Exceptions\JWTException;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
@@ -57,7 +58,7 @@ class AuthController extends Controller
             $error = $e->getMessage();
             return $error;
         }
-
-        return response()->json(compact('token'));
+        $user = Auth::user();
+        return response()->json(compact('user','token'));
     }
 }
