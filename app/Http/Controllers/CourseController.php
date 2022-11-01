@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\User;
+use App\Models\Course;
 use Illuminate\Support\Facades\DB;
 
-class UserController extends Controller
+class CourseController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -15,8 +15,10 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::all();
-        return $users;
+        $coures = Course::all();
+        return response()->json([
+            'courses' => $coures
+        ]);
     }
 
     /**
@@ -27,7 +29,19 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $this->validate($request, [
+            'name' => 'required|max:255',
+            'hourly_intensity' => 'required|numeric'
+        ]);
+
+        $course = new Course();
+        $course->name = $request->name;
+        $course->hourly_intensity = $request->hourly_intensity;
+        $course->save();
+
+        return response()->json([
+            'course' => $course
+        ]);
     }
 
     /**
@@ -38,9 +52,9 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        $user = User::find($id);
+        $course = Course::find($id);
         return response()->json([
-            'user' => $user
+            'course' => $course
         ]);
     }
 
@@ -57,20 +71,18 @@ class UserController extends Controller
             //code...
             $this->validate($request, [
                 'name' => 'required|max:255',
-                'email' => 'required|email|max: 255|unique:users,email,' . $id,
-                'phone' => 'required|numeric|unique:users,phone,' . $id,
+                'hourly_intensity'=> 'required|numeric'
             ]);
 
-            $user = DB::table('users')
+            DB::table('courses')
                 ->where('id', $id)
                 ->update([
                     'name' => $request->name,
-                    'email' => $request->email,
-                    'phone' => $request->phone,
+                    'hourly_intensity' => $request->hourly_intensity,
                 ]);
 
             return response()->json([
-                'message' => "Usuario modificado"
+                'message' => "Curso modificado"
             ]);
         } catch (\Throwable $e) {
             report($e);
@@ -90,11 +102,11 @@ class UserController extends Controller
         try {
             //code...
             DB::transaction(function () use ($id) {
-                DB::table('user_rols')->where('user_id', $id)->delete();
-                DB::table('users')->where('id', $id)->delete();
+                DB::table('user_courses')->where('course_id', $id)->delete();
+                DB::table('courses')->where('id', $id)->delete();
             });
             return response()->json([
-                'message' => "Usuario eliminado"
+                'message' => "Curso eliminado"
             ]);
         } catch (\Throwable $e) {
             report($e);

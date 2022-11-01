@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\UserCourse;
 use Illuminate\Http\Request;
-use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
-class UserController extends Controller
+class UserCourseController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -15,8 +15,21 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::all();
-        return $users;
+
+        $matriculas = DB::table('user_courses AS uc')
+            ->select([
+                'uc.id',
+                'us.name',
+                'cou.name AS alumno',
+                'uc.created_at AS fecha'
+            ])
+            ->join('users AS us', 'us.id', 'uc.user_id')
+            ->join('courses AS cou', 'cou.id', 'uc.course_id')
+            ->get();
+
+        return response()->json([
+            'enrollments' => $matriculas
+        ]);
     }
 
     /**
@@ -27,7 +40,26 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        try {
+            //code...
+            $this->validate($request, [
+                'user' => 'required|numeric',
+                'course' => 'required|numeric'
+            ]);
+
+            $enrollment = new UserCourse();
+            $enrollment->user_id = $request->user;
+            $enrollment->course_id = $request->course;
+            $enrollment->save();
+
+            return response()->json([
+                'enrollment' => $enrollment
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+            $error = $e->getMessage();
+            return $error;
+        }
     }
 
     /**
@@ -38,10 +70,7 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        $user = User::find($id);
-        return response()->json([
-            'user' => $user
-        ]);
+        //
     }
 
     /**
@@ -53,30 +82,7 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
-        try {
-            //code...
-            $this->validate($request, [
-                'name' => 'required|max:255',
-                'email' => 'required|email|max: 255|unique:users,email,' . $id,
-                'phone' => 'required|numeric|unique:users,phone,' . $id,
-            ]);
-
-            $user = DB::table('users')
-                ->where('id', $id)
-                ->update([
-                    'name' => $request->name,
-                    'email' => $request->email,
-                    'phone' => $request->phone,
-                ]);
-
-            return response()->json([
-                'message' => "Usuario modificado"
-            ]);
-        } catch (\Throwable $e) {
-            report($e);
-            $error = $e->getMessage();
-            return $error;
-        }
+        //
     }
 
     /**
@@ -89,12 +95,9 @@ class UserController extends Controller
     {
         try {
             //code...
-            DB::transaction(function () use ($id) {
-                DB::table('user_rols')->where('user_id', $id)->delete();
-                DB::table('users')->where('id', $id)->delete();
-            });
+            DB::table('user_courses')->where('id', $id)->delete();
             return response()->json([
-                'message' => "Usuario eliminado"
+                'message' => "Inscripcion eliminada"
             ]);
         } catch (\Throwable $e) {
             report($e);
